@@ -61,7 +61,7 @@ public class BatchNeuralNetwork {
                 list_w_Δ.add(null);
             } else {
                 double[] nodeBias = new double[layerConfig[layerIndex]];
-                MathHelper.random(nodeBias);
+                MathUtil.random(nodeBias);
                 list_b.add(nodeBias);
                 list_b_Δ.add(new double[layerConfig[layerIndex]]);
                 list_δ.add(new double[layerConfig[layerIndex]]);
@@ -69,7 +69,7 @@ public class BatchNeuralNetwork {
                 ArrayList<double[]> list = new ArrayList(layerConfig[layerIndex]);
                 for (int nodeIndex = 0; nodeIndex < layerConfig[layerIndex]; nodeIndex++) {
                     double[] nodeWeights = new double[layerConfig[layerIndex - 1]];
-                    MathHelper.random(nodeWeights);
+                    MathUtil.random(nodeWeights);
                     list.add(nodeWeights);
                 }
                 list_w.add(list);
@@ -100,7 +100,7 @@ public class BatchNeuralNetwork {
                 }
                 nodeSum[nodeIndex] /= layerConfig[preLayer];
                 nodeSum[nodeIndex] += nodeBias;
-                list_σ.get(layer)[nodeIndex] = MathHelper.sigmod(nodeSum[nodeIndex]);
+                list_σ.get(layer)[nodeIndex] = MathUtil.sigmod(nodeSum[nodeIndex]);
             }
         }
     }
@@ -190,7 +190,7 @@ public class BatchNeuralNetwork {
                         .append(" o=").append(nf.format(list_σ.get(i)[j]))
                         .append(" δ=").append(nf.format(list_δ.get(i)[j]))
                         .append(" b=").append(nf.format(list_b.get(i)[j]))
-                        .append(" w=").append(ArrayUtil.toString(nodeWeights, "0.00")).append('\n');
+                        .append(" w=").append(ArrayPrintUtil.toString(nodeWeights, "0.00")).append('\n');
             }
         }
         return sb.toString();

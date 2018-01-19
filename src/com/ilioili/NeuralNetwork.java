@@ -1,13 +1,13 @@
 package com.ilioili;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 /**
  * Created by ilioili on 2018/1/3.
  */
-public class NeuralNetwork {
-    public static final int WEIGHT_MAX = 10;
+public class NeuralNetwork implements Serializable{
     private final int[] layerConfig;
     private int layerNum;
     /**
@@ -56,14 +56,14 @@ public class NeuralNetwork {
                 list_w.add(null);
             } else {
                 double[] nodeBias = new double[layerConfig[layerIndex]];
-                MathHelper.random(nodeBias);
+                MathUtil.random(nodeBias);
                 list_b.add(nodeBias);
                 list_δ.add(new double[layerConfig[layerIndex]]);
                 list_z.add(new double[layerConfig[layerIndex]]);
                 ArrayList<double[]> list = new ArrayList(layerConfig[layerIndex]);
                 for (int nodeIndex = 0; nodeIndex < layerConfig[layerIndex]; nodeIndex++) {
                     double[] nodeWeights = new double[layerConfig[layerIndex - 1]];
-                    MathHelper.random(nodeWeights);
+                    MathUtil.random(nodeWeights);
                     list.add(nodeWeights);
                 }
                 list_w.add(list);
@@ -86,7 +86,7 @@ public class NeuralNetwork {
                     nodeSum[nodeIndex] += nodeInputWeitghts[i] * list_σ.get(preLayer)[i];
                 }
                 nodeSum[nodeIndex] += nodeBias;
-                list_σ.get(layer)[nodeIndex] = MathHelper.sigmod(nodeSum[nodeIndex]);
+                list_σ.get(layer)[nodeIndex] = MathUtil.sigmod(nodeSum[nodeIndex]);
             }
         }
     }
@@ -94,29 +94,21 @@ public class NeuralNetwork {
     public void backPropergation(double[] outputLabels) {
         int lastLayerIndex = layerNum - 1;
         int lastSecondLayer = lastLayerIndex - 1;
-        computeCost(outputLabels);
+//        computeCost(outputLabels);
 
 
         //输出层
         for (int lastLayerNodeIndex = 0; lastLayerNodeIndex < layerConfig[lastLayerIndex]; lastLayerNodeIndex++) {//遍历输出节点
             double output = list_σ.get(lastLayerIndex)[lastLayerNodeIndex];
-//            double δ = output * (1 - output) * (output - outputLabels[lastLayerNodeIndex]);
-            double δ = (output - outputLabels[lastLayerNodeIndex]);
+            double δ = output * (1 - output) * (output - outputLabels[lastLayerNodeIndex]); //平方差作为成本函数
+//            double δ = (output - outputLabels[lastLayerNodeIndex]);//softmax作为成本函数
             list_δ.get(lastLayerIndex)[lastLayerNodeIndex] = δ;
             for (int lastSecondLayerNodeIndex = 0; lastSecondLayerNodeIndex < layerConfig[lastSecondLayer]; lastSecondLayerNodeIndex++) {
                 double lastSecondLayerNodeOutput = list_σ.get(lastSecondLayer)[lastSecondLayerNodeIndex];
                 list_w.get(lastLayerIndex).get(lastLayerNodeIndex)[lastSecondLayerNodeIndex] -= leanrgingRate * δ * lastSecondLayerNodeOutput;
-                list_b.get(lastLayerIndex)[lastLayerNodeIndex] -= δ * leanrgingRate;
-//                if (list_w.get(lastLayerIndex).get(lastLayerNodeIndex)[lastSecondLayerNodeIndex] > WEIGHT_MAX)
-//                    list_w.get(lastLayerIndex).get(lastLayerNodeIndex)[lastSecondLayerNodeIndex] = WEIGHT_MAX;
-//                if (list_w.get(lastLayerIndex).get(lastLayerNodeIndex)[lastSecondLayerNodeIndex] < -WEIGHT_MAX)
-//                    list_w.get(lastLayerIndex).get(lastLayerNodeIndex)[lastSecondLayerNodeIndex] = -WEIGHT_MAX;
-                if (list_b.get(lastLayerIndex)[lastLayerNodeIndex] > layerConfig[lastSecondLayer])
-                    list_b.get(lastLayerIndex)[lastLayerNodeIndex] = layerConfig[lastSecondLayer];
-                else if (list_b.get(lastLayerIndex)[lastLayerNodeIndex] < -layerConfig[lastSecondLayer])
-                    list_b.get(lastLayerIndex)[lastLayerNodeIndex] = -layerConfig[lastSecondLayer];
-
             }
+            double[] bs = list_b.get(lastLayerIndex);
+            bs[lastLayerNodeIndex] -= δ * leanrgingRate;
         }
         //隐藏层
         for (int layerIndex = lastSecondLayer; layerIndex > 0; layerIndex--) {
@@ -127,22 +119,16 @@ public class NeuralNetwork {
                 for (int nextLayerNodeIndex = 0; nextLayerNodeIndex < layerConfig[nextLayerIndex]; nextLayerNodeIndex++) {
                     δ += list_δ.get(nextLayerIndex)[nextLayerNodeIndex] * list_w.get(nextLayerIndex).get(nextLayerNodeIndex)[nodeIndex];
                 }
-                double output = list_σ.get(layerIndex)[nodeIndex];
-//                δ *= output * (1 - output);//FIXME
+                double output = list_σ.get(layerIndex)[nodeIndex];//FIXME
+                δ *= output * (1 - output);//FIXME
                 list_δ.get(layerIndex)[nodeIndex] = δ;
-                for (int preLayerNodeIndex = 0; preLayerNodeIndex < layerConfig[preLayerIndex]; preLayerNodeIndex++) {
+                int preLayerNodeNum = layerConfig[preLayerIndex];
+                for (int preLayerNodeIndex = 0; preLayerNodeIndex < preLayerNodeNum; preLayerNodeIndex++) {
                     double preLayerNodeOutput = list_σ.get(preLayerIndex)[preLayerNodeIndex];
                     list_w.get(layerIndex).get(nodeIndex)[preLayerNodeIndex] -= leanrgingRate * δ * preLayerNodeOutput;
-                    list_b.get(layerIndex)[nodeIndex] -= leanrgingRate * δ;
-//                    if (list_w.get(layerIndex).get(nodeIndex)[preLayerNodeIndex] > WEIGHT_MAX)
-//                        list_w.get(layerIndex).get(nodeIndex)[preLayerNodeIndex] = WEIGHT_MAX;
-//                    if (list_w.get(layerIndex).get(nodeIndex)[preLayerNodeIndex] < -WEIGHT_MAX)
-//                        list_w.get(layerIndex).get(nodeIndex)[preLayerNodeIndex] = -WEIGHT_MAX;
-                    if (list_b.get(layerIndex)[nodeIndex] > layerConfig[preLayerIndex])
-                        list_b.get(layerIndex)[nodeIndex] = layerConfig[preLayerIndex];
-                    if (list_b.get(layerIndex)[nodeIndex] < -layerConfig[preLayerIndex])
-                        list_b.get(layerIndex)[nodeIndex] = -layerConfig[preLayerIndex];
                 }
+                double[] bs = list_b.get(layerIndex);
+                bs[nodeIndex] -= leanrgingRate * δ;
             }
         }
 
@@ -178,7 +164,7 @@ public class NeuralNetwork {
                         .append(" o=").append(nf.format(list_σ.get(i)[j]))
                         .append(" δ=").append(nf.format(list_δ.get(i)[j]))
                         .append(" b=").append(nf.format(list_b.get(i)[j]))
-                        .append(" w=").append(ArrayUtil.toString(nodeWeights, "0.00")).append('\n');
+                        .append(" w=").append(ArrayPrintUtil.toString(nodeWeights, "0.00")).append('\n');
             }
         }
         return sb.toString();

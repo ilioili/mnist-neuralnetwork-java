@@ -5,7 +5,7 @@ import java.text.DecimalFormat;
 /**
  * Created by ilioili on 2018/1/3.
  */
-public class ArrayUtil {
+public class ArrayPrintUtil {
     public static String toString(double[] array, String format) {
         DecimalFormat decimalFormat = new DecimalFormat(format);
         StringBuilder stringBuilder = new StringBuilder();
